@@ -13,7 +13,6 @@ import logging
 app = Flask(__name__)
 CORS(app)
 
-# Set your OpenAI API Key securely
 os.environ["OPENAI_API_KEY"] = "ENTER_YOUR_SECRET_API_KEY"
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -25,7 +24,7 @@ logging.basicConfig(level=logging.DEBUG)
 def create_agent(file_path):
     global agent_executor, csv_file_path
     try:
-        df = pd.read_csv(file_path)  # Checking if CSV can be read
+        df = pd.read_csv(file_path)
         agent_executor = create_csv_agent(OpenAI(temperature=0, openai_api_key=os.environ["OPENAI_API_KEY"]),
                                           file_path,
                                           verbose=True, allow_dangerous_code=True)
@@ -78,7 +77,7 @@ def query():
         if "plot" in user_input.lower():
             df = pd.read_csv(csv_file_path)
             plt.figure(figsize=(10, 5))
-            df.plot(kind='line')  # Customize the plot as needed
+            df.plot(kind='line')
             plt.title('Sample Plot')
             plt.xlabel('X-axis')
             plt.ylabel('Y-axis')
