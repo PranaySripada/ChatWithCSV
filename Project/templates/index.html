@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TensorGO</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #333333;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header img {
+            width: 30%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        #uploadForm {
+            display: flex;
+            align-items: center;
+        }
+        #file_input {
+            margin-right: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #555555;
+            background-color: #444444;
+            color: #ffffff;
+        }
+        #upload_status {
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #ff6f61;
+        }
+        .chat-container {
+            border: 1px solid #555555;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            background-color: #222222;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        .chat-output {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            border-bottom: 1px solid #555555;
+            background-color: #111111;
+        }
+        .chat-input-container {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #555555;
+            background-color: #333333;
+        }
+        #user_input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #555555;
+            border-radius: 4px;
+            background-color: #444444;
+            color: #ffffff;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin: 10px 0;
+        }
+        .message.user {
+            text-align: right;
+            color: #007bff;
+        }
+        .message.agent {
+            text-align: left;
+            color: #ffffff;
+        }
+        .plot img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src='../static/images/logo.jpg'>
+            <h1>Chat with CSV</h1>
+        </div>
+
+        <div class="form-container">
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" id="file_input" name="file">
+                <button type="submit">Upload CSV</button>
+            </form>
+            <div id="upload_status"></div>
+        </div>
+
+        <div class="chat-container">
+            <div id="output" class="chat-output"></div>
+            <div class="chat-input-container">
+                <input type="text" id="user_input" placeholder="Enter your query here...">
+                <button onclick="sendQuery()">Send</button>
+            </div>
+        </div>
+
+        <div id="plot" class="plot"></div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').onsubmit = function(event) {
+            event.preventDefault();
+            const formData = new FormData();
+            const fileInput = document.getElementById('file_input');
+            formData.append('file', fileInput.files[0]);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('upload_status').innerText = 'File uploaded successfully!';
+                } else {
+                    document.getElementById('upload_status').innerText = 'File upload failed: ' + data.error;
+                }
+            })
+            .catch(error => {
+                document.getElementById('upload_status').innerText = 'Error: ' + error.message;
+                console.error('Error:', error);
+            });
+        };
+
+        function sendQuery() {
+            const userInput = document.getElementById('user_input').value;
+            fetch('/query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ input: userInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const outputDiv = document.getElementById('output');
+                outputDiv.innerHTML += `<div class="message user">${userInput}</div>`;
+                outputDiv.innerHTML += `<div class="message agent">${data.output}</div>`;
+                if (data.plot_data) {
+                    document.getElementById('plot').innerHTML = `<img src="data:image/png;base64,${data.plot_data}" alt="Plot">`;
+                }
+                document.getElementById('user_input').value = '';
+                outputDiv.scrollTop = outputDiv.scrollHeight;
+            })
+            .catch(error => {
+                document.getElementById('output').innerText = 'Error: ' + error.message;
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
